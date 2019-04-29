@@ -31,9 +31,9 @@ public class ClientThread extends Thread {
     private static volatile HashMap<Integer, ObjectOutputStream> outputClient = new HashMap<>();
 
 
-    ClientThread(Socket s, Bingo game, Consumer<Serializable> callback,int player) throws IOException {
+    ClientThread(Socket s, Bingo game, Consumer<Serializable> callback,ObjectOutputStream output,int player) throws IOException {
         this.socket = s;
-        this.out=new ObjectOutputStream(s.getOutputStream());
+        this.out= output;
         this.serverGame = game;
         this.callback = callback;
         players++;
@@ -77,12 +77,13 @@ public class ClientThread extends Thread {
             System.out.println("Cannot set up input");
         }
 
-        /*Thread gameReady = new Thread() {
+        Thread gameReady = new Thread() {
             public void run() {
 
                 while (true) {
 
-                    if (connections.size() >= 4) {
+                    if (connections.size() == 4) {
+                        System.out.println("4 clients connected");
                         try {
                             send("gameReady");
                         } catch (Exception e) {
@@ -94,14 +95,14 @@ public class ClientThread extends Thread {
                 }
             }
 
-            ;
+
         };
 
         gameReady.setDaemon(true);
         gameReady.start();
 
 
-       /* while (true) {
+       while (true) {
 
             try {
                 Serializable data = (Serializable) in.readObject();
@@ -110,7 +111,7 @@ public class ClientThread extends Thread {
             } catch (Exception e) {
                 System.out.println(e);
             }
-        }*/
+        }
     }
     public ObjectOutputStream getOut() {
         return this.out;

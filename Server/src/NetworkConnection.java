@@ -67,21 +67,21 @@ public abstract class NetworkConnection {
                     this.mainServer=server;
                     while (true) {
                         Socket client=server.accept();
+                        ObjectOutputStream output = new ObjectOutputStream(client.getOutputStream());
                         numPlayers++;
 
                         System.out.println("The number of players"+ numPlayers);
-                        connectedClients.put(numPlayers,new ObjectOutputStream(client.getOutputStream()));
+                        connectedClients.put(numPlayers,output);
                         clientGames.put(numPlayers,new Bingo(numPlayers));
                         //send("playerNumber "+numPlayers);
                         //callback.accept("playerID "+numPlayers);
                         //Thread.sleep(1000);
 
-                        ClientThread ct = new ClientThread(client,clientGames.get(numPlayers),callback,numPlayers);
+                        ClientThread ct = new ClientThread(client,clientGames.get(numPlayers),callback,output,numPlayers);
                         AllClients.add(ct);
 
                         //ct.setDaemon(true);
                         ct.start();
-                        //callback.accept("newClient");
 
 
                     }
