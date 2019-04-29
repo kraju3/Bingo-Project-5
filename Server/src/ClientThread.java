@@ -73,14 +73,25 @@ public class ClientThread extends Thread {
         try {
             System.out.println("Player Number "+ playerNumber);
             send("playerID"+" "+playerNumber);
+            Thread.sleep(2000);
+            //this.out.flush();
+            if (connections.size()<4){
+                try {
+                    send("waiting");
+                    callback.accept("waiting for more");
+                } catch (Exception e) {
+                    System.out.println("error waiting");
+                }
+            }
+
         } catch (Exception e) {
             System.out.println("Cannot set up input");
         }
 
         Thread gameReady = new Thread() {
             public void run() {
-
-                while (true) {
+                boolean numberconnected =true;
+                while (numberconnected) {
 
                     if (connections.size() == 4) {
                         System.out.println("4 clients connected");
@@ -89,9 +100,11 @@ public class ClientThread extends Thread {
                         } catch (Exception e) {
                             e.printStackTrace();
                         }
+                        numberconnected=false;
 
                         //callback.accept("gameReady");
                     }
+
                 }
             }
 
