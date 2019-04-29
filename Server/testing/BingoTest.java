@@ -1,6 +1,12 @@
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.util.Random;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.concurrent.BlockingDeque;
+import java.util.concurrent.LinkedBlockingDeque;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 class BingoTest {
@@ -10,7 +16,7 @@ class BingoTest {
 
     @BeforeEach
     void init(){
-        game1=new Bingo();game2=new Bingo();game3=new Bingo();
+        game1=new Bingo(1);game2=new Bingo(2);game3=new Bingo(3);
     }
 
     @Test
@@ -46,5 +52,23 @@ class BingoTest {
 
     @Test
     void generateRandomIntIntRange() {
+        BlockingDeque<Integer> queue = new LinkedBlockingDeque<>();
+        TimerTask task = new TimerTask() {
+            public void run() {
+                Random r = new Random();
+                try {
+                    queue.put(r.nextInt((151 - 0) + 1) + 0);
+                } catch (InterruptedException e) {
+                    System.out.println("error trying to send random numbe");
+                }
+                // or use whatever method you chose to generate the numbe
+            }
+        };
+        Timer timer = new Timer(true);
+        timer.schedule(task, 0, 2000);
+        System.out.println(queue.getLast());
+
+
+
     }
 }
