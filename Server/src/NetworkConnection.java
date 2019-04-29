@@ -65,6 +65,7 @@ public abstract class NetworkConnection {
                 try (ServerSocket server = new ServerSocket(getPort())) {
                     callback.accept("serverConnected");
                     this.mainServer=server;
+                    boolean numDrawn=false;
                     while (true) {
                         Socket client=server.accept();
                         ObjectOutputStream output = new ObjectOutputStream(client.getOutputStream());
@@ -80,12 +81,13 @@ public abstract class NetworkConnection {
                         ClientThread ct = new ClientThread(client,clientGames.get(numPlayers),callback,output,numPlayers);
                         AllClients.add(ct);
 
+
                         //ct.setDaemon(true);
                         ct.start();
 
-
+                        }
                     }
-                } catch (Exception e) {
+                 catch (Exception e) {
                     serverReset = false;
                     callback.accept("serverNotConnected");
                     while (!serverReset) {

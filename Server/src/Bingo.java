@@ -39,7 +39,7 @@ public class Bingo {
         }
         public void setBoard(){
         int i=0,j=0;
-        bingoSheet=bingoSheet.concat("bingo ");
+        bingoSheet=bingoSheet.concat("bingoSheet ");
         for(i =0;i<5;i++){
 
             for( j=0;j<5;j++){
@@ -49,7 +49,7 @@ public class Bingo {
                 }
             }
         }
-        bingoSheet=bingoSheet.concat("end");
+        //bingoSheet=bingoSheet.concat("end");
 
         }
         public static int generateRandomIntIntRange(int min, int max) {

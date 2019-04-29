@@ -4,6 +4,8 @@ import java.io.Serializable;
 import java.net.Socket;
 import java.net.SocketException;
 import java.util.HashMap;
+import java.util.Random;
+import java.util.Stack;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.function.Consumer;
 
@@ -25,7 +27,7 @@ public class ClientThread extends Thread {
 
     private static int players = 0;
     private int playerNumber;
-
+    private static volatile Stack<Integer> numbersDrawn = new Stack<>();
     //private static volatile hashmap for all players
     private static volatile HashMap<Integer, Boolean> connections = new HashMap<>();
     private static volatile HashMap<Integer, ObjectOutputStream> outputClient = new HashMap<>();
@@ -74,9 +76,11 @@ public class ClientThread extends Thread {
             System.out.println("Player Number "+ playerNumber);
             send("playerID"+" "+playerNumber);
             Thread.sleep(2000);
+            send(this.serverGame.getBingoSheet());
             //this.out.flush();
             if (connections.size()<4){
                 try {
+                    Thread.sleep(2000);
                     send("waiting");
                     callback.accept("waiting for more");
                 } catch (Exception e) {
@@ -91,6 +95,7 @@ public class ClientThread extends Thread {
         Thread gameReady = new Thread() {
             public void run() {
                 boolean numberconnected =true;
+                boolean startDraw = false;
                 while (numberconnected) {
 
                     if (connections.size() == 4) {
@@ -100,16 +105,30 @@ public class ClientThread extends Thread {
                         } catch (Exception e) {
                             e.printStackTrace();
                         }
-                        numberconnected=false;
+                        numberconnected = false;
+                        startDraw = true;
+                    }}
+                while(startDraw)synchronized (numbersDrawn){
+                        Random r = new Random();
+                        int drawnNumber = r.nextInt((150 - 0) + 1);
+                        numbersDrawn.push(drawnNumber);
+                        int sendNumber=numbersDrawn.peek();
+                        try {
+                                send("drawn " + sendNumber);
+                            } catch (Exception e) {
+                                System.out.println("error sending number");
+                            }
 
-                        //callback.accept("gameReady");
-                    }
+                        try {
+                            Thread.sleep(10000);
+                        } catch (InterruptedException e) {
+                            System.out.println("Error sleeping the thread while drawing numbers");
+                        }
+                        }
 
-                }
-            }
 
 
-        };
+        }};
 
         gameReady.setDaemon(true);
         gameReady.start();
@@ -120,7 +139,7 @@ public class ClientThread extends Thread {
             try {
                 Serializable data = (Serializable) in.readObject();
                 System.out.println(data.toString());
-                //getInput(data.toString());
+                getInput(data.toString());
             } catch (Exception e) {
                 System.out.println(e);
             }
@@ -128,5 +147,48 @@ public class ClientThread extends Thread {
     }
     public ObjectOutputStream getOut() {
         return this.out;
+    }
+    private void getInput(String data) {
+        String[] parsedData = data.split(" ");
+
+        switch (parsedData[0]){
+            case "history":
+                sendHistory();
+                break;
+            case "leaderBoard":
+                sendleaderBoard();
+                break;
+            default:
+                break;
+        }
+    }
+   //if the client rrequests the history of numbers drawn;
+    public void sendHistory() {
+        String numberHistory="";
+        for(Integer x:numbersDrawn){
+            numberHistory.concat(x+" ");
+        }
+        try {
+            send("history"+" "+numberHistory+" "+"end");
+        } catch (Exception e) {
+           System.out.println("Sending history gone wrong");
+        }
+    }
+    // if client requests the leadrboard
+    public void sendleaderBoard()  {
+        try {
+            send("leaderBoard playerID points end");
+        } catch (Exception e) {
+            System.out.println("Sending the leaderboard gone wrong");
+        }
+    }
+
+    public static int generateRandomIntIntRange(int min, int max) {
+        Random r = new Random();
+        return r.nextInt((max - min) + 1) + min;
+    }
+
+    public Stack getNumDrawn(){
+        return numbersDrawn;
     }
 }
