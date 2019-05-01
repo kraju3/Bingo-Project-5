@@ -52,14 +52,15 @@ public abstract class NetworkConnection {
          ServerSocket mainServer;
          private volatile int numPlayers =0;
 
-         private HashMap<Integer,ObjectOutputStream> connectedClients = new HashMap<>();//keeps track of the connected clients
+         private volatile HashMap<Integer,ObjectOutputStream> connectedClients = new HashMap<>();//keeps track of the connected clients
 
-         private HashMap<Integer,Bingo> clientGames=new HashMap<>();// all the games where the playerId is the key and the game is the value
+         private volatile HashMap<Integer,Bingo> clientGames=new HashMap<>();// all the games where the playerId is the key and the game is the value
 
 
-        private volatile Stack<Integer> numbersDrawn = new Stack<>();
+         private volatile Stack<Integer> numbersDrawn = new Stack<>();
         //Creates a server socket and an infinite loop to connect client sockets to the server
         public void run(){
+            Random r =new Random();
             while(true) {
                 //Server socket is made and listens for new clients
                 try (ServerSocket server = new ServerSocket(getPort())) {
@@ -76,13 +77,13 @@ public abstract class NetworkConnection {
                         clientGames.put(numPlayers,new Bingo(numPlayers));
                         send("playerID" + " " + numPlayers,numPlayers);
 
-                        ClientThread ct = new ClientThread(client,clientGames.get(numPlayers),callback,output,numPlayers);
+                        ClientThread ct = new ClientThread(client,clientGames.get(numPlayers),callback,output,numPlayers,r);
                         AllClients.add(ct);
 
 
                         ct.setDaemon(true);
                         ct.start();
-                        drawNumbers();
+                        //drawNumbers().start();
 
                     }
                     }
@@ -102,39 +103,31 @@ public abstract class NetworkConnection {
             return clientGames;
         }
 
-        public void drawNumbers(){
-            if(connectedClients.size()==4) {
-                boolean startDraw = true;
-                while (startDraw) {
+        public Thread drawNumbers(){
+            Thread drawnNumber = new Thread(){
+            public void run(){
+              if(connectedClients.size()==4) {
+
+                while (true) {
 
                     try {
-                        Thread.sleep(15000);
+
+                        Random r = new Random();
+                        int drawnNumber = r.nextInt((49) + 1);
+                        numbersDrawn.push(drawnNumber);
+                        System.out.println("Draw: "+drawnNumber);
+                        for(ClientThread x:AllClients){
+                            x.getNumDrawn().push(drawnNumber);
+                        }
+                        Thread.sleep(18000);
                     } catch (InterruptedException e) {
                         System.out.println("Error sleeping the thread while drawing numbers");
                     }
-                    Random r = new Random();
-                    int drawnNumber = r.nextInt((49 - 0) + 1);
-                    numbersDrawn.push(drawnNumber);
-                    for(ClientThread x:AllClients){
-                        x.getNumDrawn().push(drawnNumber);
-                    }
-
-                    int sendNumber = numbersDrawn.peek();
-                    try {
-                        for(Integer x:connectedClients.keySet())
-                            send("drawn " + sendNumber,x);
-                    } catch (Exception e) {
-                        System.out.println("error sending number");
-                    }
-                    for(ClientThread x:AllClients){
-                        if(x.getVerify()){
-                            startDraw=false;
-                            Thread.yield();
-                        }
-                    }
 
                 }
-            }
+              }
+            }};
+            return drawnNumber;
         }
 
 

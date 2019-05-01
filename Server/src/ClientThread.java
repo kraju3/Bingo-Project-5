@@ -21,20 +21,23 @@ public class ClientThread extends Thread {
     private Consumer<Serializable> callback;
 
     private volatile boolean verify = false;
+    static volatile Random random;
 
     private static int players = 0;
     private int playerNumber;
-    private Stack<Integer> numbersDrawn = new Stack<>();
+    private volatile Stack<Integer> numbersDrawn = new Stack<>();
     //private static volatile hashmap for all players
     private static volatile HashMap<Integer, Boolean> connections = new HashMap<>();
     private static volatile HashMap<Integer, ObjectOutputStream> outputClient = new HashMap<>();
 
 
-    ClientThread(Socket s, Bingo game, Consumer<Serializable> callback,ObjectOutputStream output,int player) throws IOException {
+    ClientThread(Socket s, Bingo game, Consumer<Serializable> callback,ObjectOutputStream output,int player,Random r) throws IOException {
         this.socket = s;
         this.out= output;
         this.serverGame = game;
         this.callback = callback;
+        this.numbersDrawn=new Stack<>();
+        random=r;
         players++;
         playerNumber = player;
         connections.put(playerNumber, true);
@@ -73,9 +76,19 @@ public class ClientThread extends Thread {
 
             callback.accept("newClient");
             setUpGame();
+            int numberDrawn;
 
 
-            while(true){
+            while(true) synchronized (random){
+                try{
+                Thread.sleep(10000);
+                int drawnNumber = random.nextInt((49) + 1);
+                numbersDrawn.push(drawnNumber);
+                send("drawn"+" "+drawnNumber);
+                System.out.println("Client "+playerNumber+" Draw"+drawnNumber);
+                }
+                catch(Exception e){System.out.println("error sending drawn numbers");}
+
                 try {
                     Serializable data = (Serializable) in.readObject();
                     System.out.println(data.toString());
@@ -175,7 +188,7 @@ public class ClientThread extends Thread {
                 try {
                     Thread.sleep(1000);
                     send("waiting");
-                    callback.accept("waiting for more");
+                    //callback.accept("waiting for more");
                 } catch (Exception e) {
                     System.out.println("error waiting");
                 }
