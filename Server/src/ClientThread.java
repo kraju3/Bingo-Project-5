@@ -4,6 +4,7 @@ import java.io.Serializable;
 import java.net.Socket;
 import java.net.SocketException;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Random;
 import java.util.Stack;
 import java.util.function.Consumer;
@@ -15,33 +16,47 @@ import java.io.ObjectInputStream;
 public class ClientThread extends Thread {
     private Socket socket;
     private ObjectOutputStream out;
-    private int points = 0;
+
     private ObjectInputStream in;
     private Bingo serverGame;
     private Consumer<Serializable> callback;
+    private int points=0;
 
-    private volatile boolean verify = false;
-    static volatile Random random;
+    private volatile boolean startDraw;
+    private static volatile boolean stopDraw;
+    private static volatile boolean restart;
 
     private static int players = 0;
     private int playerNumber;
-    private volatile Stack<Integer> numbersDrawn = new Stack<>();
+    private static  volatile Stack<Integer> numbersDrawn = new Stack<Integer>();
     //private static volatile hashmap for all players
     private static volatile HashMap<Integer, Boolean> connections = new HashMap<>();
     private static volatile HashMap<Integer, ObjectOutputStream> outputClient = new HashMap<>();
+    private static volatile HashMap<Integer,Integer> leaderBoard =new HashMap<>();
 
 
-    ClientThread(Socket s, Bingo game, Consumer<Serializable> callback,ObjectOutputStream output,int player,Random r) throws IOException {
+    ClientThread(boolean On){
+        this.startDraw=On;
+        stopDraw=true;
+    }
+    ClientThread(Socket s, Bingo game, Consumer<Serializable> callback,ObjectOutputStream output,int player) throws IOException {
         this.socket = s;
         this.out= output;
         this.serverGame = game;
         this.callback = callback;
-        this.numbersDrawn=new Stack<>();
-        random=r;
         players++;
         playerNumber = player;
         connections.put(playerNumber, true);
         outputClient.put(playerNumber, out);
+        leaderBoard.put(playerNumber,0);
+        this.startDraw=false;
+        restart =false;
+        try {
+            in = new ObjectInputStream(socket.getInputStream());
+
+        } catch (IOException e) {
+            System.out.println("Cannot set up input 1");
+        }
     }
 
     public int getPlayerNumber(){
@@ -65,30 +80,56 @@ public class ClientThread extends Thread {
 
     //Sets player one and player two. Once both are connected, will listen for any input from clients
     public void run() {
-        boolean clientOn = true;
+        while (true) {
+            if (this.startDraw) {
+                sendNumber();
+            }//this statement is for the separate client thread that is drawing all the number for the client;
+
+        else {
+
+                callback.accept("newClient");
+                setUpGame();
+                System.out.println("Reached here by "+playerNumber);
+                restart=false;
+           }
+        }
+    }
+
+    public void sendNumber(){
+        while (stopDraw) {
+
             try {
-                in = new ObjectInputStream(socket.getInputStream());
-                socket.setTcpNoDelay(true);
-            } catch (IOException e) {
-                System.out.println("Cannot set up input 1");
-            }
-
-
-            callback.accept("newClient");
-            setUpGame();
-            int numberDrawn;
-
-
-            while(true) synchronized (random){
-                try{
-                Thread.sleep(10000);
-                int drawnNumber = random.nextInt((49) + 1);
+                Thread.sleep(12000);
+                Random r = new Random();
+                int drawnNumber = r.nextInt((49) + 1);
                 numbersDrawn.push(drawnNumber);
-                send("drawn"+" "+drawnNumber);
-                System.out.println("Client "+playerNumber+" Draw"+drawnNumber);
+                System.out.println("Draw: " + drawnNumber);
+                for (ObjectOutputStream o : outputClient.values()) {
+                    try {
+                        sendtoAllClients("drawn" + " " + drawnNumber, o);
+                    } catch (IOException e) {
+                        System.out.println("error sending it to client");
+                    }
                 }
-                catch(Exception e){System.out.println("error sending drawn numbers");}
 
+            } catch (InterruptedException e) {
+                System.out.println("Error sleeping the thread while drawing numbers");
+            }
+        }
+        try {
+            Thread.sleep(1500);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        if(stopDraw==false){
+            numbersDrawn.clear();
+        }
+    }
+
+    public void readData(){
+        while(true){
+
+          if(!restart){
                 try {
                     Serializable data = (Serializable) in.readObject();
                     System.out.println(data.toString());
@@ -96,7 +137,14 @@ public class ClientThread extends Thread {
                     callback.accept("Client " + playerNumber + " " + data.toString());
                 } catch (Exception e) {
                     System.out.println(e);
+                    }
+
                 }
+          else{
+              restart=true;
+              stopDraw=true;
+              break;
+          }
         }
     }
 
@@ -117,30 +165,35 @@ public class ClientThread extends Thread {
                 sendleaderBoard();
                 break;
             case "bingo":
-                this.verify=true;
-                Thread.sleep(2000);
+                //Thread.sleep(2000);
                 verifyBingo(parsedData);
             default:
                 break;
         }
     }
-    public boolean getVerify(){
-        return this.verify;
-    }
 
     public void verifyBingo(String[] bingoToken){
         if(this.serverGame.verifyBingo(bingoToken)){
+            stopDraw=false;//stops the drawer
             points++;
+            leaderBoard.replace(playerNumber,points);
             try {
-                Thread.sleep(5000);
+                Thread.sleep(2000);
                 for(ObjectOutputStream x:outputClient.values()) {
                     try {
                         sendtoAllClients("gameWinner " + playerNumber+" "+points, x);
+
+
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
                 }
-                    callback.accept("Client "+playerNumber+" "+"won");
+                Thread.sleep(2000);
+
+                callback.accept("Client "+playerNumber+" "+"won");
+                restart =true;
+
+
             } catch (Exception e) {
                 System.out.println("error sending bingo validator");
             }
@@ -168,8 +221,19 @@ public class ClientThread extends Thread {
     }
     // if client requests the leadrboard
     public void sendleaderBoard()  {
+        String leader = "";
+        for (Map.Entry mapElement : leaderBoard.entrySet()) {
+            int playerID = (int)mapElement.getKey();
+
+            // Add some bonus marks
+            // to all the students and print it
+            int score = (int)mapElement.getValue();
+
+            leader=leader.concat(playerID+" "+score+" ");
+        }
+
         try {
-            send("leaderBoard playerID points end");
+            send("leaderBoard "+leader+"end");
         } catch (Exception e) {
             System.out.println("Sending the leaderboard gone wrong");
         }
@@ -179,11 +243,10 @@ public class ClientThread extends Thread {
 
      while(true){
         try {
-            //System.out.println("Player Number " + playerNumber);
 
             Thread.sleep(1000);
             send(this.serverGame.getBingoSheet());
-            //this.out.flush();
+
             if (connections.size() < 4) {
                 try {
                     Thread.sleep(1000);
@@ -215,10 +278,12 @@ public class ClientThread extends Thread {
             }
 
 
-        } catch (Exception e) {
+          } catch (Exception e) {
             System.out.println("Cannot set up input");
+         }
         }
-    }}
+      readData();
+    }
 
 
     public Stack getNumDrawn(){
