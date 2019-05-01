@@ -52,12 +52,12 @@ public abstract class NetworkConnection {
          ServerSocket mainServer;
          private volatile int numPlayers =0;
 
-        private HashMap<Integer,ObjectOutputStream> connectedClients = new HashMap<>();//keeps track of the connected clients
+         private HashMap<Integer,ObjectOutputStream> connectedClients = new HashMap<>();//keeps track of the connected clients
 
          private HashMap<Integer,Bingo> clientGames=new HashMap<>();// all the games where the playerId is the key and the game is the value
 
 
-
+        private volatile Stack<Integer> numbersDrawn = new Stack<>();
         //Creates a server socket and an infinite loop to connect client sockets to the server
         public void run(){
             while(true) {
@@ -65,7 +65,7 @@ public abstract class NetworkConnection {
                 try (ServerSocket server = new ServerSocket(getPort())) {
                     callback.accept("serverConnected");
                     this.mainServer=server;
-                    boolean numDrawn=false;
+
                     while (true) {
                         Socket client=server.accept();
                         ObjectOutputStream output = new ObjectOutputStream(client.getOutputStream());
@@ -74,18 +74,17 @@ public abstract class NetworkConnection {
                         System.out.println("The number of players"+ numPlayers);
                         connectedClients.put(numPlayers,output);
                         clientGames.put(numPlayers,new Bingo(numPlayers));
-                        //send("playerNumber "+numPlayers);
-                        //callback.accept("playerID "+numPlayers);
-                        //Thread.sleep(1000);
+                        send("playerID" + " " + numPlayers,numPlayers);
 
                         ClientThread ct = new ClientThread(client,clientGames.get(numPlayers),callback,output,numPlayers);
                         AllClients.add(ct);
 
 
-                        //ct.setDaemon(true);
+                        ct.setDaemon(true);
                         ct.start();
+                        drawNumbers();
 
-                        }
+                    }
                     }
                  catch (Exception e) {
                     serverReset = false;
@@ -102,6 +101,45 @@ public abstract class NetworkConnection {
         public HashMap<Integer, Bingo> getClientGames() {
             return clientGames;
         }
+
+        public void drawNumbers(){
+            if(connectedClients.size()==4) {
+                boolean startDraw = true;
+                while (startDraw) {
+
+                    try {
+                        Thread.sleep(15000);
+                    } catch (InterruptedException e) {
+                        System.out.println("Error sleeping the thread while drawing numbers");
+                    }
+                    Random r = new Random();
+                    int drawnNumber = r.nextInt((49 - 0) + 1);
+                    numbersDrawn.push(drawnNumber);
+                    for(ClientThread x:AllClients){
+                        x.getNumDrawn().push(drawnNumber);
+                    }
+
+                    int sendNumber = numbersDrawn.peek();
+                    try {
+                        for(Integer x:connectedClients.keySet())
+                            send("drawn " + sendNumber,x);
+                    } catch (Exception e) {
+                        System.out.println("error sending number");
+                    }
+                    for(ClientThread x:AllClients){
+                        if(x.getVerify()){
+                            startDraw=false;
+                            Thread.yield();
+                        }
+                    }
+
+                }
+            }
+        }
+
+
+
+
     }
 }
 

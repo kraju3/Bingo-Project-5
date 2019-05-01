@@ -44,7 +44,7 @@ public class Bingo {
 
             for( j=0;j<5;j++){
                 if(i==2&&j==2){playerBoard[i][j]=1;}
-                else{playerBoard[i][j]=generateRandomIntIntRange(0,151);
+                else{playerBoard[i][j]=generateRandomIntIntRange();
                  bingoSheet=bingoSheet.concat(playerBoard[i][j]+" ");
                 }
             }
@@ -52,9 +52,9 @@ public class Bingo {
         //bingoSheet=bingoSheet.concat("end");
 
         }
-        public static int generateRandomIntIntRange(int min, int max) {
+        public static int generateRandomIntIntRange() {
             Random r = new Random();
-            return r.nextInt((max - min) + 1) + min;
+            return r.nextInt((49 - 0) + 1);
         }
     public int[][] getPlayerBoard() {
         return playerBoard;
@@ -70,11 +70,12 @@ public class Bingo {
 
     // Checks every possibility of bingo on the sheet. The rows, columns and diagonals will be individually added up.
     //  If their sum is 5 then there is a drawn number in every element along that path and therefore bingo.
-    public boolean verifyBingo(int [][] pBoard){
+    public boolean verifyBingo(String[]parsedData){
         //Checking rows
+        parseBingo(parsedData);
         for(int i=0; i<5; i++){
             int sum = 0;
-            for(int j=0; j<5; j++){ sum+= pBoard[i][j]; }
+            for(int j=0; j<5; j++){ sum+= checkBingo[i][j]; }
             if(sum == 5){
                 System.out.println("Bingo on row " + i);
                 return true;
@@ -84,7 +85,7 @@ public class Bingo {
         //Checking columns
         for(int i=0; i<5; i++){
             int sum = 0;
-            for(int j=0; j<5; j++){ sum+= pBoard[j][i]; }
+            for(int j=0; j<5; j++){ sum+= checkBingo[j][i]; }
             if(sum == 5){
                 System.out.println("Bingo on column " + i);
                 return true;
@@ -92,8 +93,8 @@ public class Bingo {
         }
 
         //Checking diagonals
-        int diagonal1 = pBoard[0][0] + pBoard[1][1] + pBoard[2][2] + pBoard[3][3] + pBoard[4][4];
-        int diagonal2 = pBoard[0][4] + pBoard[1][3] + pBoard[2][2] + pBoard[3][1] + pBoard[4][0];
+        int diagonal1 = checkBingo[0][0] + checkBingo[1][1] + checkBingo[2][2] + checkBingo[3][3] + checkBingo[4][4];
+        int diagonal2 = checkBingo[0][4] + checkBingo[1][3] + checkBingo[2][2] + checkBingo[3][1] + checkBingo[4][0];
 
         if(diagonal1 == 5){
             System.out.println("Diagnonal1 (top left to bottom right) bingo");
@@ -109,11 +110,11 @@ public class Bingo {
 
     // Parses the bingo instruction sent from the client and inputs each coordinate into a 2d array. If a drawn number
     // is present at a coordinate then there is a 1, else 0.
-    public void parseBingo(String[] tokens, int [][] playerBoard){
+    public void parseBingo(String[] tokens){
         for(int i=1; !tokens[i].equals("end"); i+=2) {
             int x = Integer.parseInt(tokens[i]);
             int y = Integer.parseInt(tokens[i+1]);
-            playerBoard[x][y] = 1;
+            checkBingo[x][y] = 1;
         }
     }
 

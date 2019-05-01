@@ -6,7 +6,6 @@ import java.net.SocketException;
 import java.util.HashMap;
 import java.util.Random;
 import java.util.Stack;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.function.Consumer;
 
 
@@ -15,19 +14,17 @@ import java.io.ObjectInputStream;
 
 public class ClientThread extends Thread {
     private Socket socket;
-
-
-
     private ObjectOutputStream out;
+    private int points = 0;
     private ObjectInputStream in;
     private Bingo serverGame;
     private Consumer<Serializable> callback;
-    private static volatile LinkedBlockingQueue<Object> messages = new LinkedBlockingQueue<>();
 
+    private volatile boolean verify = false;
 
     private static int players = 0;
     private int playerNumber;
-    private static volatile Stack<Integer> numbersDrawn = new Stack<>();
+    private Stack<Integer> numbersDrawn = new Stack<>();
     //private static volatile hashmap for all players
     private static volatile HashMap<Integer, Boolean> connections = new HashMap<>();
     private static volatile HashMap<Integer, ObjectOutputStream> outputClient = new HashMap<>();
@@ -58,97 +55,45 @@ public class ClientThread extends Thread {
         this.out.writeObject(data);
     }
 
+    public void sendtoAllClients(Serializable data,ObjectOutputStream x) throws IOException {
+        x.writeObject(data);
+
+    }
+
     //Sets player one and player two. Once both are connected, will listen for any input from clients
     public void run() {
-
-        try {
-            in = new ObjectInputStream(socket.getInputStream());
-            socket.setTcpNoDelay(true);
-        } catch (IOException e) {
-            System.out.println("Cannot set up input 1");
-        }
-
-        //send("playerID "+playerNumber);
-        //callback.accept("playerID "+playerNumber);
-      callback.accept("newClient");
-
-        try {
-            System.out.println("Player Number "+ playerNumber);
-            send("playerID"+" "+playerNumber);
-            Thread.sleep(2000);
-            send(this.serverGame.getBingoSheet());
-            //this.out.flush();
-            if (connections.size()<4){
-                try {
-                    Thread.sleep(2000);
-                    send("waiting");
-                    callback.accept("waiting for more");
-                } catch (Exception e) {
-                    System.out.println("error waiting");
-                }
-            }
-
-        } catch (Exception e) {
-            System.out.println("Cannot set up input");
-        }
-
-        Thread gameReady = new Thread() {
-            public void run() {
-                boolean numberconnected =true;
-                boolean startDraw = false;
-                while (numberconnected) {
-
-                    if (connections.size() == 4) {
-                        System.out.println("4 clients connected");
-                        try {
-                            send("gameReady");
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
-                        numberconnected = false;
-                        startDraw = true;
-                    }}
-                while(startDraw)synchronized (numbersDrawn){
-                        Random r = new Random();
-                        int drawnNumber = r.nextInt((150 - 0) + 1);
-                        numbersDrawn.push(drawnNumber);
-                        int sendNumber=numbersDrawn.peek();
-                        try {
-                                send("drawn " + sendNumber);
-                            } catch (Exception e) {
-                                System.out.println("error sending number");
-                            }
-
-                        try {
-                            Thread.sleep(10000);
-                        } catch (InterruptedException e) {
-                            System.out.println("Error sleeping the thread while drawing numbers");
-                        }
-                        }
-
-
-
-        }};
-
-        gameReady.setDaemon(true);
-        gameReady.start();
-
-
-       while (true) {
-
+        boolean clientOn = true;
             try {
-                Serializable data = (Serializable) in.readObject();
-                System.out.println(data.toString());
-                getInput(data.toString());
-            } catch (Exception e) {
-                System.out.println(e);
+                in = new ObjectInputStream(socket.getInputStream());
+                socket.setTcpNoDelay(true);
+            } catch (IOException e) {
+                System.out.println("Cannot set up input 1");
             }
+
+
+            callback.accept("newClient");
+            setUpGame();
+
+
+            while(true){
+                try {
+                    Serializable data = (Serializable) in.readObject();
+                    System.out.println(data.toString());
+                    getInput(data.toString());
+                    callback.accept("Client " + playerNumber + " " + data.toString());
+                } catch (Exception e) {
+                    System.out.println(e);
+                }
         }
     }
+
+
+
+
     public ObjectOutputStream getOut() {
         return this.out;
     }
-    private void getInput(String data) {
+    public void getInput(String data) throws InterruptedException {
         String[] parsedData = data.split(" ");
 
         switch (parsedData[0]){
@@ -158,15 +103,49 @@ public class ClientThread extends Thread {
             case "leaderBoard":
                 sendleaderBoard();
                 break;
+            case "bingo":
+                this.verify=true;
+                Thread.sleep(2000);
+                verifyBingo(parsedData);
             default:
                 break;
         }
     }
+    public boolean getVerify(){
+        return this.verify;
+    }
+
+    public void verifyBingo(String[] bingoToken){
+        if(this.serverGame.verifyBingo(bingoToken)){
+            points++;
+            try {
+                Thread.sleep(5000);
+                for(ObjectOutputStream x:outputClient.values()) {
+                    try {
+                        sendtoAllClients("gameWinner " + playerNumber+" "+points, x);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+                    callback.accept("Client "+playerNumber+" "+"won");
+            } catch (Exception e) {
+                System.out.println("error sending bingo validator");
+            }
+        }
+        else{
+            try {
+                send("invalidBingo");
+            } catch (Exception e) {
+                System.out.println("error sending bingo validator");
+            }
+        }
+    }
+
    //if the client rrequests the history of numbers drawn;
     public void sendHistory() {
         String numberHistory="";
         for(Integer x:numbersDrawn){
-            numberHistory.concat(x+" ");
+            numberHistory=numberHistory.concat(x+" ");
         }
         try {
             send("history"+" "+numberHistory+" "+"end");
@@ -183,10 +162,51 @@ public class ClientThread extends Thread {
         }
     }
 
-    public static int generateRandomIntIntRange(int min, int max) {
-        Random r = new Random();
-        return r.nextInt((max - min) + 1) + min;
-    }
+    public void setUpGame(){
+
+     while(true){
+        try {
+            //System.out.println("Player Number " + playerNumber);
+
+            Thread.sleep(1000);
+            send(this.serverGame.getBingoSheet());
+            //this.out.flush();
+            if (connections.size() < 4) {
+                try {
+                    Thread.sleep(1000);
+                    send("waiting");
+                    callback.accept("waiting for more");
+                } catch (Exception e) {
+                    System.out.println("error waiting");
+                }
+            }
+            else if(connections.size()==4) {
+                try {
+                    Thread.sleep(1000);
+                    send("gameReady");
+                    break;
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+
+            }
+            else if(connections.size()>4){
+                try {
+                    Thread.sleep(1000);
+                    send("gameReady");
+                    break;
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+
+            }
+
+
+        } catch (Exception e) {
+            System.out.println("Cannot set up input");
+        }
+    }}
+
 
     public Stack getNumDrawn(){
         return numbersDrawn;
