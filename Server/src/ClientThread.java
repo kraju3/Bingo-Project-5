@@ -85,9 +85,15 @@ public class ClientThread extends Thread {
                 sendNumber();
             }//this statement is for the separate client thread that is drawing all the number for the client;
 
-        else {
+        else {//the clientThreads that do not draw
 
                 callback.accept("newClient");
+                try {
+                    send(this.serverGame.getBingoSheet());
+                } catch (Exception e) {
+                    System.out.println("sending bingo sheet");
+                }
+
                 setUpGame();
                 System.out.println("Reached here by "+playerNumber);
                 restart=false;
@@ -104,6 +110,7 @@ public class ClientThread extends Thread {
                 int drawnNumber = r.nextInt((49) + 1);
                 numbersDrawn.push(drawnNumber);
                 System.out.println("Draw: " + drawnNumber);
+                callback.accept("drawn"+" "+drawnNumber);
                 for (ObjectOutputStream o : outputClient.values()) {
                     try {
                         sendtoAllClients("drawn" + " " + drawnNumber, o);
@@ -134,7 +141,7 @@ public class ClientThread extends Thread {
                     Serializable data = (Serializable) in.readObject();
                     System.out.println(data.toString());
                     getInput(data.toString());
-                    callback.accept("Client " + playerNumber + " " + data.toString());
+
                 } catch (Exception e) {
                     System.out.println(e);
                     }
@@ -167,6 +174,7 @@ public class ClientThread extends Thread {
             case "bingo":
                 //Thread.sleep(2000);
                 verifyBingo(parsedData);
+                break;
             default:
                 break;
         }
@@ -177,6 +185,7 @@ public class ClientThread extends Thread {
             stopDraw=false;//stops the drawer
             points++;
             leaderBoard.replace(playerNumber,points);
+            callback.accept("gameWinner "+playerNumber+" "+points);
             try {
                 Thread.sleep(2000);
                 for(ObjectOutputStream x:outputClient.values()) {
@@ -190,7 +199,6 @@ public class ClientThread extends Thread {
                 }
                 Thread.sleep(2000);
 
-                callback.accept("Client "+playerNumber+" "+"won");
                 restart =true;
 
 
@@ -201,6 +209,7 @@ public class ClientThread extends Thread {
         else{
             try {
                 send("invalidBingo");
+                callback.accept("invalidBingo");
             } catch (Exception e) {
                 System.out.println("error sending bingo validator");
             }
@@ -231,7 +240,7 @@ public class ClientThread extends Thread {
 
             leader=leader.concat(playerID+" "+score+" ");
         }
-
+            callback.accept("leaderBoard "+leader+"end");
         try {
             send("leaderBoard "+leader+"end");
         } catch (Exception e) {
@@ -245,13 +254,13 @@ public class ClientThread extends Thread {
         try {
 
             Thread.sleep(1000);
-            send(this.serverGame.getBingoSheet());
+
 
             if (connections.size() < 4) {
                 try {
                     Thread.sleep(1000);
                     send("waiting");
-                    //callback.accept("waiting for more");
+                    callback.accept("waiting");
                 } catch (Exception e) {
                     System.out.println("error waiting");
                 }
@@ -260,6 +269,7 @@ public class ClientThread extends Thread {
                 try {
                     Thread.sleep(1000);
                     send("gameReady");
+                    callback.accept("gameReady");
                     break;
                 } catch (Exception e) {
                     e.printStackTrace();
