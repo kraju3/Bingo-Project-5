@@ -145,7 +145,62 @@ public class FXNet extends Application {
         return root;
     }
 
+        // Add images
+        private void setImages(ArrayList<MyButton> buttons){
+        String moveImages[] = new String[]{"Resource/one.png", "Resource/two.png", "Resource/three.png",
+            "Resource/four.png","Resource/five.png","Resource/six.png","Resource/seven.jpg",
+            "Resource/eight.gif","Resource/nine.jpg","Resource/ten.jpg","Resource/eleven.png",
+            "Resource/twelve.gif","Resource/thirteen.png","Resource/fourteen.jpg","Resource/fifteen.jpg",
+            "Resource/sixteen.png","Resource/seventeen.jpg","Resource/eighteen.png","Resource/19.jpg",
+            "Resource/twenty.png","Resource/twentyone.png","Resource/twentytwo.png","Resource/twentythree.png",
+            "Resource/twentyfour.png","Resource/twentyfive.png","Resource/twentysix.png","Resource/twentyseven.png",
+            "Resource/twentyeight.png","Resource/twentynine.png","Resource/thirty.png","Resource/thirtyone.png",
+            "Resource/thirtytwo.jpg","Resource/thirtythree.png","Resource/thirtyfour.png","Resource/thirtyfive.png",
+            "Resource/thirtysix.jpg","Resource/thirtyseven.jpg","Resource/thirtyeight.png","Resource/thirtynine.png",
+            "Resource/forty.jpg","Resource/fortyone.jpg","Resource/fortytwo.png","Resource/fortythree.png",
+            "Resource/fortyfour.jpg","Resource/fortyfive.png","Resource/fortysix.jpg","Resource/fortyseven.png",
+            "Resource/fortyeight.png","Resource/fortynine.png","Resource/fifty.png", "Resource/freeSpace.jpg"
+        };
+        for(int i=0; i<50; i++) {
+            buttons.get(i).setImage(moveImages[i]);
+            buttons.get(i).setImagePath(moveImages[i]);
+        }
+        
+                    //An example of how to set the pictures in each MyButton in the bingo sheet
+    //Sets button images to reflect the 5 moves, p1 move, p2 move and winner
+/*    private void setImages(ArrayList<MyButton> buttons){
+        String moveImages[] = new String[]{"Resource/rock.png", "Resource/paper.png",
+                "Resource/scissors.png", "Resource/lizard.png", "Resource/spock.png"};
+        for(int i=0; i<5; i++) {
+            buttons.get(i).setImage(moveImages[i]);
+            buttons.get(i).setImagePath(moveImages[i]);
+        }
+    } */
 
+        //array of random numbers 1-50
+        int[] numArray = new int[50];
+        for(int i = 0; i <  50; i++) {
+            numArray[i] = i;
+        }
+        
+        // put numbers 1-50 in random order
+        shuffleArray(numArray);
+        }    
+        
+     static void shuffleArray(int[] arr){
+    // If running on Java 6 or older, use `new Random()` on RHS here
+    Random rnd = ThreadLocalRandom.current();
+    for (int i = arr.length - 1; i > 0; i--)
+    {
+      int index = rnd.nextInt(i + 1);
+      // Simple swap
+      int a = arr[index];
+      arr[index] = arr[i];
+      arr[i] = a;
+    }
+     
+    
+  }
 
     //Setup for GUI buttons upon creation of the GUI
     private void guiButtonsSetup(){
