@@ -1,25 +1,24 @@
+package sample;
+
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.geometry.HPos;
-import javafx.geometry.Insets;
-import javafx.geometry.Pos;
 import javafx.geometry.VPos;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.scene.control.*;
+import javafx.scene.control.Button;
+import javafx.scene.control.ListView;
+import javafx.scene.control.TextField;
 import javafx.scene.layout.GridPane;
-import javafx.scene.layout.VBox;
 import javafx.scene.paint.Paint;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
-import sun.misc.resources.Messages;
 
-public class FXNet extends Application{
-
+public class FXNet extends Application {
 
     private NetworkConnection  conn = createServer();
     //creating label port
@@ -29,15 +28,21 @@ public class FXNet extends Application{
     //Creating a Grid Pane
     GridPane gridPane = new GridPane();
 
+
+    ObservableList<String> drawnNumbers = FXCollections.observableArrayList("Drawn Numbers" + " "," ");
+    ListView<String> drawnList = new ListView<String>(drawnNumbers);
+
     ObservableList<String> names = FXCollections.observableArrayList(
             "LeaderBoard"+" "+" "+"playerID"+" "+" "+" Points"," ");
     ListView<String> Leader = new ListView<String>(names);//observable list for the leaderboard
+
 
     //Label for name
 
     //Text field for name
     TextField serverText = new TextField();
     TextField portNum=new TextField();
+    int portnum;
     private Text title = new Text("BINGO");
     Button connectServerBtn =new Button("Connect");//takes the data from theportnumber textField
     Button Exit =new Button("Exit");
@@ -50,13 +55,15 @@ public class FXNet extends Application{
 
     private Parent createContent() {
         //Setting size for the pane
-       // gridPane.setMinSize(400, 200);
+        // gridPane.setMinSize(400, 200);
 
 
 
         //Setting the vertical and horizontal gaps between the columns
         gridPane.setVgap(5);
         gridPane.setHgap(5);
+
+        Leader.setPrefHeight(200);
 
 
 
@@ -71,9 +78,11 @@ public class FXNet extends Application{
         GridPane.setConstraints(clientNumber,4,0,5,5,HPos.CENTER,VPos.TOP);
         //Port and IP input fields
         GridPane.setConstraints(Port, 3, 0, 1, 1, HPos.RIGHT, VPos.CENTER);
+        GridPane.setConstraints(drawnList, 0,6,1,1,HPos.LEFT,VPos.BOTTOM);
 
         portNum.setOnAction(e->{
             Port.setText("Port: "+portNum.getText());
+            portnum = Integer.parseInt(portNum.getText());
         });
 
 
@@ -95,7 +104,7 @@ public class FXNet extends Application{
 
         serverText.setPrefHeight(textAreaSize);
 
-       gridPane.getChildren().addAll(Port,portNum,Exit,connectServerBtn,title,clientNo,serverText,Leader);
+        gridPane.getChildren().addAll(Port,portNum,Exit,connectServerBtn,title,clientNo,serverText,Leader,drawnList);
 
         return gridPane;
 
@@ -113,7 +122,7 @@ public class FXNet extends Application{
         Exit.setDisable(true);
     }
     public void newClient(){
-       serverText.setText(conn.AllClients.size()+" "+"client connected");
+        serverText.setText(conn.AllClients.size()+" "+"client connected");
     }
     private void interpretData(String data) {
         String[] parsedData = data.split(" ");
@@ -122,7 +131,7 @@ public class FXNet extends Application{
             case "newClient":
                 newClient();
                 break;
-            /*case "waiting":
+            case "waiting":
                 waitingForOthers();
                 break;
             case "gameReady":
@@ -131,6 +140,10 @@ public class FXNet extends Application{
             case "leaderBoard":
                 leaderBoard(parsedData);
                 break;
+            case "drawn":
+                drawnNumber(parsedData);
+                break;
+                /*
             case "gameWinner":
                 gameWinner(parsedData);
                 break;
@@ -149,6 +162,32 @@ public class FXNet extends Application{
         clientNo.setText("Server connection closed ");
         connectServerBtn.setDisable(false);
     }
+
+    private void leaderBoard(String[] tokens) {
+        //leaderBoard.setText(leaderBoardHeader + "\n");
+        for(int i=1; !tokens[i].equals("end"); i+=3){
+            String boardEntry = tokens[i] + "\t\t" + tokens[i+1] + "\t\t" + tokens[i+2] + "\n";
+            names.add(boardEntry);
+        }
+        Leader.setItems(names);
+
+    }
+
+    private void waitingForOthers() {
+        clientNo.setText("Game not ready, waiting for all four players to connect.");
+
+    }
+
+    private void setGameReady() {
+        clientNo.setText("Game is ready, all four players connected.");
+    }
+
+    private void drawnNumber(String[] tokens) {
+        drawnNumbers.add(tokens[1] + "\n");
+        drawnList.setItems(drawnNumbers);
+
+    }
+
     public static void main(String[] args) {
         // TODO Auto-generated method stub
         launch(args);
@@ -167,13 +206,14 @@ public class FXNet extends Application{
         conn.startConn();
     }
 
+
     @Override
     public void stop() throws Exception{
         conn.closeConn();
     }
 
     private Server createServer() {
-        return new Server(5556, data-> {
+        return new Server(portnum, data-> {
             Platform.runLater(()-> {
                 String serverData = data.toString();
                 System.out.println("Server: " + serverData);
