@@ -20,7 +20,7 @@ import javafx.stage.Stage;
 
 public class FXNet extends Application {
 
-    private NetworkConnection  conn = createServer();
+    private NetworkConnection  conn;
     //creating label port
     Text Port = new Text("Port");//port text
 
@@ -83,8 +83,12 @@ public class FXNet extends Application {
         portNum.setOnAction(e->{
             Port.setText("Port: "+portNum.getText());
             portnum = Integer.parseInt(portNum.getText());
+            conn = createServer();
         });
 
+        connectServerBtn.setOnAction(new EventHandler<ActionEvent>() {
+            public void handle(ActionEvent event)
+        })
 
 
 
@@ -120,7 +124,12 @@ public class FXNet extends Application {
         connectServerBtn.setMaxSize(buttonWidth, buttonHeight);
         connectServerBtn.setDisable(true);
         Exit.setDisable(true);
+
+
     }
+
+
+
     public void newClient(){
         serverText.setText(conn.AllClients.size()+" "+"client connected");
     }
