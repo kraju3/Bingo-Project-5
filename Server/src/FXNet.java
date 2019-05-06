@@ -85,10 +85,7 @@ public class FXNet extends Application {
             portnum = Integer.parseInt(portNum.getText());
             conn = createServer();
         });
-
-        connectServerBtn.setOnAction(new EventHandler<ActionEvent>() {
-            public void handle(ActionEvent event)
-        })
+        
 
 
 
