@@ -145,9 +145,31 @@ public class FXNet extends Application {
         return root;
     }
 
+
         // Add images
-        private void setImages(ArrayList<MyButton> buttons){
-        String moveImages[] = new String[]{"Resource/one.png", "Resource/two.png", "Resource/three.png",
+        /*private void setImages(ArrayList<MyButton> buttons){
+
+        } */   
+        
+     static void shuffleArray(int[] arr){
+    // If running on Java 6 or older, use `new Random()` on RHS here
+    Random rnd = ThreadLocalRandom.current();
+    for (int i = arr.length - 1; i > 0; i--)
+    {
+      int index = rnd.nextInt(i + 1);
+      // Simple swap
+      int a = arr[index];
+      arr[index] = arr[i];
+      arr[i] = a;
+    }
+     
+    
+  }
+
+    //Setup for GUI buttons upon creation of the GUI
+    private void guiButtonsSetup(){
+
+                String moveImages[] = new String[]{"Resource/one.png", "Resource/two.png", "Resource/three.png",
             "Resource/four.png","Resource/five.png","Resource/six.png","Resource/seven.jpg",
             "Resource/eight.gif","Resource/nine.jpg","Resource/ten.jpg","Resource/eleven.png",
             "Resource/twelve.gif","Resource/thirteen.png","Resource/fourteen.jpg","Resource/fifteen.jpg",
@@ -161,10 +183,10 @@ public class FXNet extends Application {
             "Resource/fortyfour.jpg","Resource/fortyfive.png","Resource/fortysix.jpg","Resource/fortyseven.png",
             "Resource/fortyeight.png","Resource/fortynine.png","Resource/fifty.png", "Resource/freeSpace.jpg"
         };
-        for(int i=0; i<50; i++) {
+        /*for(int i=0; i<50; i++) {
             buttons.get(i).setImage(moveImages[i]);
             buttons.get(i).setImagePath(moveImages[i]);
-        }
+        }*/
         
                     //An example of how to set the pictures in each MyButton in the bingo sheet
     //Sets button images to reflect the 5 moves, p1 move, p2 move and winner
@@ -185,26 +207,180 @@ public class FXNet extends Application {
         
         // put numbers 1-50 in random order
         shuffleArray(numArray);
-        }    
         
-     static void shuffleArray(int[] arr){
-    // If running on Java 6 or older, use `new Random()` on RHS here
-    Random rnd = ThreadLocalRandom.current();
-    for (int i = arr.length - 1; i > 0; i--)
-    {
-      int index = rnd.nextInt(i + 1);
-      // Simple swap
-      int a = arr[index];
-      arr[index] = arr[i];
-      arr[i] = a;
-    }
-     
-    
-  }
+        for(int i=0; i<5; i++){
+           for( int k=0; k<5; k++){
+               Random random = new Random(); 
+               int index = random.nextInt(numArray.length);
+               int x = numArray[index];
+               switch(x){
+                   case 1:
+                       bingoBoard[i][k] = new MyButton("Resource/one.png");
+                       break;
+                    case 2:
+                       bingoBoard[i][k] = new MyButton("Resource/two.png");
+                       break;
+                    case 3:
+                       bingoBoard[i][k] = new MyButton("Resource/three.png");
+                       break;
+                    case 4:
+                       bingoBoard[i][k] = new MyButton("Resource/four.png");
+                       break;
+                    case 5:
+                       bingoBoard[i][k] = new MyButton("Resource/five.png");
+                       break;
+                    case 6:
+                       bingoBoard[i][k] = new MyButton("Resource/six.png");
+                       break;
+                    case 7:
+                       bingoBoard[i][k] = new MyButton("RResource/seven.jpg");
+                       break;
+                    case 8:
+                       bingoBoard[i][k] = new MyButton("Resource/eight.gif");
+                       break;
+                    case 9:
+                       bingoBoard[i][k] = new MyButton("Resource/nine.jpg");
+                       break;
+                    case 10:
+                       bingoBoard[i][k] = new MyButton("Resource/ten.jpg");
+                       break;
+                    case 11:
+                       bingoBoard[i][k] = new MyButton("Resource/eleven.png");
+                       break;
+                    case 12:
+                       bingoBoard[i][k] = new MyButton("Resource/twelve.gif");
+                       break;
+                    case 13:
+                       bingoBoard[i][k] = new MyButton("Resource/thirteen.png");
+                       break;
+                    case 14:
+                       bingoBoard[i][k] = new MyButton("Resource/fourteen.jpg");
+                       break;
+                    case 15:
+                       bingoBoard[i][k] = new MyButton("Resource/fifteen.jpg");
+                       break;
+                    case 16:
+                       bingoBoard[i][k] = new MyButton("Resource/sixteen.png");
+                       break;
+                    case 17:
+                       bingoBoard[i][k] = new MyButton("Resource/seventeen.jpg");
+                       break;
+                    case 18:
+                       bingoBoard[i][k] = new MyButton("Resource/eighteen.png");
+                       break;
+                    case 19:
+                       bingoBoard[i][k] = new MyButton("Resource/19.jpg");
+                       break;
+                    case 20:
+                       bingoBoard[i][k] = new MyButton("Resource/twenty.png");
+                       break;
+                    case 21:
+                       bingoBoard[i][k] = new MyButton("Resource/twentyone.png");
+                       break;
+                    case 22:
+                       bingoBoard[i][k] = new MyButton("Resource/twentytwo.png");
+                       break;
+                    case 23:
+                       bingoBoard[i][k] = new MyButton("Resource/twentythree.png");
+                       break;
+                    case 24:
+                       bingoBoard[i][k] = new MyButton("Resource/twentyfour.png");
+                       break;
+                    case 25:
+                       bingoBoard[i][k] = new MyButton("Resource/twentyfive.png");
+                       break;
+                    case 26:
+                       bingoBoard[i][k] = new MyButton("Resource/twentysix.png");
+                       break;
+                    case 27:
+                       bingoBoard[i][k] = new MyButton("Resource/twentyseven.png");
+                       break;
+                    case 28:
+                       bingoBoard[i][k] = new MyButton("Resource/twentyeight.png");
+                       break;
+                    case 29:
+                       bingoBoard[i][k] = new MyButton("Resource/twentynine.png");
+                       break;
+                    case 30:
+                       bingoBoard[i][k] = new MyButton("Resource/thirty.png");
+                       break;
+                    case 31:
+                       bingoBoard[i][k] = new MyButton("Resource/thirtyone.png");
+                       break;
+                    case 32:
+                       bingoBoard[i][k] = new MyButton("Resource/thirtytwo.jpg");
+                       break;
+                    case 33:
+                       bingoBoard[i][k] = new MyButton("Resource/thirtythree.png");
+                       break;
+                    case 34:
+                       bingoBoard[i][k] = new MyButton("Resource/thirtyfour.png");
+                       break;
+                    case 35:
+                       bingoBoard[i][k] = new MyButton("Resource/thirtyfive.png");
+                       break;
+                    case 36:
+                       bingoBoard[i][k] = new MyButton("Resource/thirtysix.jpg");
+                       break;
+                    case 37:
+                       bingoBoard[i][k] = new MyButton("Resource/thirtyseven.jpg");
+                       break;
+                    case 38:
+                       bingoBoard[i][k] = new MyButton("Resource/thirtyeight.png");
+                       break;
+                    case 39:
+                       bingoBoard[i][k] = new MyButton("Resource/thirtynine.png");
+                       break;
+                    case 40:
+                       bingoBoard[i][k] = new MyButton("Resource/forty.jpg");
+                       break;
+                    case 41:
+                       bingoBoard[i][k] = new MyButton("Resource/fortyone.jpg");
+                       break;
+                    case 42:
+                       bingoBoard[i][k] = new MyButton("Resource/fortytwo.png");
+                       break;
+                    case 43:
+                       bingoBoard[i][k] = new MyButton("Resource/fortythree.png");
+                       break;
+                    case 44:
+                       bingoBoard[i][k] = new MyButton("Resource/fortyfour.jpg");
+                       break;
+                    case 45:
+                       bingoBoard[i][k] = new MyButton("Resource/fortyfive.png");
+                       break;
+                    case 46:
+                       bingoBoard[i][k] = new MyButton("Resource/fortysix.jpg");
+                       break;
+                    case 47:
+                       bingoBoard[i][k] = new MyButton("Resource/fortyseven.png");
+                       break;
+                    case 48:
+                       bingoBoard[i][k] = new MyButton("Resource/fortyeight.png");
+                       break;
+                    case 49:
+                       bingoBoard[i][k] = new MyButton("Resource/fortynine.png");
+                       break;
+                    case 50:
+                       bingoBoard[i][k] = new MyButton("Resource/fifty.png");
+                       break;
+                    default:
+                        bingoBoard[i][k] = new MyButton("Resource/freeSpace.jpg");
+                    
+               }
+                //bingoBoard[i][k] = new MyButton("[" + i + "]" + "[" + k + "]");
+                bingoBoard[i][k].setButtonText();
+                bingoBoard[i][k].getButton().setMinWidth(bingoDimensionLength);
+                bingoBoard[i][k].getButton().setMinHeight(bingoDimensionLength);
+                bingoBoard[i][k].getButton().setDisable(true);
 
-    //Setup for GUI buttons upon creation of the GUI
-    private void guiButtonsSetup(){
-       for(int i=0; i<5; i++){
+                //Setting default images
+                //bingoBoard[i][k].setDefault();
+           }
+       }
+        
+
+       /*for(int i=0; i<5; i++){
            for( int k=0; k<5; k++){
                 bingoBoard[i][k] = new MyButton("[" + i + "]" + "[" + k + "]");
                 bingoBoard[i][k].setButtonText();
@@ -215,7 +391,7 @@ public class FXNet extends Application {
                 //Setting default images
                 //bingoBoard[i][k].setDefault();
            }
-       }
+       }*/
 
         setButtonActions();
 
